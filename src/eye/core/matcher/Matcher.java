@@ -1,0 +1,38 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+package eye.core.matcher;
+
+import eye.core.model.Image;
+import eye.core.model.result.SearchResult;
+import eye.core.model.result.SimilarityResult;
+import java.util.List;
+
+/**
+ *
+ * @author spr1ng
+ * @version $Id$
+ */
+public interface Matcher {
+
+    /**
+     * 
+     * @param image1
+     * @param image2
+     * @param oneInAnother искать ли один рисунок внутри другого?
+     * @return
+     */
+    SimilarityResult getSimilarityResult(Image image1, Image image2, boolean oneInAnother);
+    
+    /**
+     * 
+     * @param image1
+     * @param images list of images to check
+     * @param oneInAnother искать ли один рисунок внутри другого?
+     * @return
+     */
+    SearchResult getSearchResult(Image image1, List<Image> images, boolean oneInAnother);
+
+}
