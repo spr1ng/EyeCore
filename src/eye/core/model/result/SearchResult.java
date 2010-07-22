@@ -6,7 +6,9 @@
 package eye.core.model.result;
 
 import eye.core.model.Image;
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -17,14 +19,14 @@ import java.util.Set;
 public class SearchResult {
 
     private Image userImage;
-    private Set<SimilarityResult> results;
+    private List<SimilarityResult> results;
 
-    public SearchResult(Image userImage, Set<SimilarityResult> results) {
+    public SearchResult(Image userImage, List<SimilarityResult> results) {
         this.userImage = userImage;
         this.results = results;
     }
 
-    public SearchResult(Set<SimilarityResult> results) {
+    public SearchResult(List<SimilarityResult> results) {
         this.results = results;
     }
 
@@ -36,11 +38,11 @@ public class SearchResult {
         this.userImage = userImage;
     }
 
-    public Set<SimilarityResult> getResults() {
+    public List<SimilarityResult> getResults() {
         return results;
     }
 
-    public void setResults(Set<SimilarityResult> results) {
+    public void setResults(List<SimilarityResult> results) {
         this.results = results;
     }
 
@@ -55,6 +57,15 @@ public class SearchResult {
         }
         
         return similarImages;
+    }
+
+    public void sortResults(){
+        SimilarityResult[] results2 = results.toArray(new SimilarityResult[0]);
+        Arrays.sort(results2);
+        for (int i = 0; i < results2.length; i++) {
+            SimilarityResult result = results2[i];
+            results.set(i, result);
+        }
     }
 
 }

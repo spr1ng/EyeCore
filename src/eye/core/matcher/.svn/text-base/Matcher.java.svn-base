@@ -16,6 +16,10 @@ import java.util.List;
  * @version $Id$
  */
 public interface Matcher {
+    /** Минимальный процент похожести, при котором картинки можно считать схожими */
+    public static double SIMILARITY_MIN = 60.0;
+    /** Кол-во знаков после запятой в значении похожести рисунков */
+    public static int SIMILARITY_ROUNDING = 4;
 
     /**
      * 

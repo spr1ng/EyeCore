@@ -26,7 +26,6 @@ file.reference.db4o-7.12.145.14409-all-java5.jar=lib/db4o-7.12.145.14409-all-jav
 includes=**
 jar.compress=false
 javac.classpath=\
-    ${reference.DB4o-Server.jar}:\
     ${file.reference.db4o-7.12.145.14409-all-java5.jar}
 # Space-separated list of extra javac options
 javac.compilerargs=
@@ -53,8 +52,6 @@ main.class=eyecore.Main
 manifest.file=manifest.mf
 meta.inf.dir=${src.dir}/META-INF
 platform.active=default_platform
-project.DB4o-Server=../DB4o-Server
-reference.DB4o-Server.jar=${project.DB4o-Server}/dist/DB4o-Server.jar
 run.classpath=\
     ${javac.classpath}:\
     ${build.classes.dir}

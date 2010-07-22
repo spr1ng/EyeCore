@@ -9,7 +9,6 @@ import java.net.Authenticator;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.logging.Logger;
 
 /**
  *
@@ -17,16 +16,16 @@ import java.util.logging.Logger;
  * @version $Id: InetUtils.java 43 2010-07-06 02:16:08Z spr1ng $
  */
 public class InetUtils {
-    
-    private final static Logger LOG = Logger.getAnonymousLogger();
 
+    private InetUtils() {}
+    
     /**
      * @param host
      * @param port
      * @param login
      * @param pass
      */
-    public void setProxy(String host, Integer port, final String login, final String pass) {
+    public static void setProxy(String host, Integer port, final String login, final String pass) {
         System.setProperty("http.proxyHost", host);
         System.setProperty("http.proxyPort", port.toString());
         Authenticator.setDefault(new Authenticator() {
@@ -49,7 +48,7 @@ public class InetUtils {
             conn.setConnectTimeout(timeout);
             conn.connect();
         } catch (Exception ex) {
-            LOG.severe(ex.getMessage());
+            System.err.println(ex.getMessage());
             return false;
         }
         return true;

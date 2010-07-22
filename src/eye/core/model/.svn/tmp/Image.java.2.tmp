@@ -1,0 +1,120 @@
+package eye.core.model;
+
+import eye.core.math.MathExt;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Set;
+
+/**
+ *
+ * @author gpdribbler, spr1ng, stream
+ * @version $Id: Image.java 52 2010-07-07 06:10:05Z spr1ng $
+ */
+public class Image implements RemoteSource{
+
+    /** Кол-во знаков после запятой, домустимое в длине ребра */
+    private static final int LENGTH_ROUNDING = 1;
+    private static final int EDGE_MAX_SIZE = 10;
+    public final static int MIN_WIDTH = 128;
+    public final static int MIN_HEIGHT = 128;
+    
+    private String url;
+    private int width;
+    private int height;
+    private Set<Point> points;
+    private List<Edge> edges;
+    
+    public Image() {
+    }
+
+    public Image(String url) {
+        this.url = url;
+    }
+
+    public Image(String url, Set<Point> points) {
+        this.url = url;
+        this.points = points;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+
+    public int getWidth() {
+        return width;
+    }
+
+    public void setWidth(int width) {
+        this.width = width;
+    }
+
+    public void setResolution(int width, int height){
+        this.width = width;
+        this.height = height;
+    }
+
+    /**
+     * HashMap (edgeSize, edgeQuantity)
+     * @return HashMap
+     */
+    public HashMap<Double, Integer> getEdgeMap(){
+        if (points == null) return null;
+        HashMap<Double, Integer> edgeMap = new HashMap<Double, Integer>();
+        for (int i = 0; i < points.size(); i++) {
+            Point point1 = points.get(i);
+            for (int j = i + 1; j < points.size(); j++) {
+                Point point2 = points.get(j);
+                double edgeSize = point1.getRelativeDistanceTo(point2);
+                //Округлим значение длины ребра //PENDING
+                edgeSize = MathExt.round(edgeSize, LENGTH_ROUNDING);
+                if (edgeSize > 0 && edgeSize <= EDGE_MAX_SIZE) {
+                    Integer edgeQty = edgeMap.get(edgeSize);
+                    if (edgeQty == null) edgeQty = 0;
+                    edgeMap.put(edgeSize, ++edgeQty);
+                }
+            }
+        }
+        return edgeMap;
+    }
+
+    public Set<Point> getPoints() {
+        return points;
+    }
+
+    public void setPoints(Set<Point> points) {
+        this.points = points;
+    }
+
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    @Override
+    public String toString() {
+        String result = "";
+        result += (url == null ? "null" : url) + " : " + (points == null ? "null" : points.size()) + " points";
+        return result;
+    }
+
+    public boolean hasMetaData(){
+        if (points == null) return false;
+        return true;
+    }
+    
+    public boolean hasValidSize() {
+        if ((width >= MIN_WIDTH) && (height >= MIN_HEIGHT)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+}

@@ -6,15 +6,13 @@
 package eye.core.matcher.impl;
 
 import eye.core.matcher.Matcher;
-import com.db4o.ObjectContainer;
-import com.db4o.query.Query;
-import eye.server.manager.impl.DBManagerBasicImpl;
+import eye.core.math.MathExt;
+import eye.server.manager.DBManagerBasicImpl;
 import eye.core.model.Image;
-import eye.core.model.Point;
 import eye.core.model.result.SearchResult;
 import eye.core.model.result.SimilarityResult;
+import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -28,7 +26,36 @@ public class MatcherEdgeSeekerImpl implements Matcher{
      * Коэффициент похожести (минимальный порог в процентах,
      * при котором два рисунка можно считать похожими)
      */
-    private static final int SIMILARITY_MIN = 60; // %
+    
+    /** 
+     * Возвращает процент похожести двух HashMap<Double, Integer>
+     * @param map1
+     * @param map2
+     * @param oneInAnother
+     * @return
+     */
+    public double getMapSimilarity(HashMap<Double, Integer> map1,
+                                   HashMap<Double, Integer> map2,
+                                   boolean oneInAnother){
+        int same = 0, total = 0;
+    //Считаем общее кол-во признаков (углов, ребер и т.п.) для каждого map'a
+        int total1 = 0, total2 = 0;
+        for (Double size : map1.keySet()) total1 += map1.get(size);
+        for (Double size : map2.keySet()) total2 += map2.get(size);
+    //Выбираем наибольшее в качестве общего кол-ва признаков
+        total = (total1 > total2 || oneInAnother) ? total1 : total2;
+    //Находим количество одинаковых признаков для обоих рисунков
+        for (Double size : map1.keySet()) {
+            Integer qty1 = map1.get(size);
+            Integer qty2 = map2.get(size);
+            if (qty1 != null && qty2 != null)
+                same += qty1 < qty2 ? qty1 : qty2;
+        }
+    //Вычисляем похожесть
+        double similarity = MathExt.round((double)same * 100 / total, SIMILARITY_ROUNDING);
+        
+        return similarity;
+    }
 
     /**
      * Определяет схожесть одного рисунка с другим в пройентах
@@ -38,72 +65,77 @@ public class MatcherEdgeSeekerImpl implements Matcher{
      * @return
      */
     public SimilarityResult getSimilarityResult(Image image1, Image image2, boolean oneInAnother) {
-        int sameEdges = 0, totalEdges = 0;
+        /*int sameEdges = 0, totalEdges = 0;
 
-        HashMap<Integer, Integer> edgeMap1 = image1.getEdgeMap();
-        HashMap<Integer, Integer> edgeMap2 = image2.getEdgeMap();
+        HashMap<Double, Integer> edgeMap1 = image1.getEdgeMap();
+        HashMap<Double, Integer> edgeMap2 = image2.getEdgeMap();
         int totalEdges1 = 0;
-        for (Integer edgeSize : edgeMap1.keySet()) {
+        for (Double edgeSize : edgeMap1.keySet()) {
             totalEdges1 += edgeMap1.get(edgeSize);
         }
         int totalEdges2 = 0;
-        for (Integer edgeSize : edgeMap2.keySet()) {
+        for (Double edgeSize : edgeMap2.keySet()) {
             totalEdges2 += edgeMap2.get(edgeSize);
         }
 
-        if (oneInAnother)//Если ищем одну картинку в другой..
-            totalEdges = (totalEdges1 + totalEdges2) / 2;
-        else
-            totalEdges = totalEdges1 > totalEdges2 ? totalEdges1 : totalEdges2;
+        totalEdges = (totalEdges1 > totalEdges2 || oneInAnother) ? totalEdges1 : totalEdges2;
 
-        System.out.println("Total edges1: " + totalEdges1);
-        System.out.println("Total edges2: " + totalEdges2);
+        System.out.println("Total edges1: " + totalEdges1 + " [" + image1.getUrl() + "]");
+        System.out.println("Total edges2: " + totalEdges2 + " [" + image2.getUrl() + "]");
 
         //Находим количество ребер разных длин, одинаковых для обоих рисунков
-        for (Integer edgeSize : edgeMap1.keySet()) {
+        for (Double edgeSize : edgeMap1.keySet()) {
             Integer edgeQty1 = edgeMap1.get(edgeSize);
             Integer edgeQty2 = edgeMap2.get(edgeSize);
             if (edgeQty1 != null && edgeQty2 != null){
-                //Большее число ребер заданной длины
-                int maxQty = edgeQty1 > edgeQty2 ? edgeQty1 : edgeQty2;
-                sameEdges += maxQty - Math.abs(edgeQty1 - edgeQty2);
+                sameEdges += edgeQty1 < edgeQty2 ? edgeQty1 : edgeQty2;
             }
         }
 
         System.out.println("total edges: " + totalEdges);
         System.out.println("same edges: " + sameEdges);
 
-        int result = sameEdges * 100 / totalEdges;
-        System.out.println("-----> Matches: " + result + "%");
+        double similarity = MathExt.round((double)sameEdges * 100 / totalEdges, Edge.LENGTH_ROUNDING);
+        System.out.println("-----> Matches: " + similarity + "%");*/
 
-        return new SimilarityResult(image1, image2, result, totalEdges1, totalEdges2, totalEdges);
+    //Ищем похожесть ребер
+        double edgeSimilarity = getMapSimilarity(image1.getEdgeMap(), image2.getEdgeMap(), oneInAnother);
+        System.out.println("edge similarity: " + edgeSimilarity + "%");
+    //Ищем похожесть углов    
+        double angleSimilarity = getMapSimilarity(image1.getAngleMap(), image2.getAngleMap(), oneInAnother);
+        System.out.println("angle similarity: " + angleSimilarity + "%");
+
+        return new SimilarityResult(image1, image2, edgeSimilarity, angleSimilarity);//new SimilarityResult(image1, image2, similarity, totalEdges1, totalEdges2, totalEdges);
     }
 
     public SearchResult getSearchResult(Image image1, List<Image> images, boolean oneInAnother) {
-        Set<SimilarityResult> results = new HashSet<SimilarityResult>();
+        List<SimilarityResult> results = new ArrayList<SimilarityResult>();
         for (Image image2 : images) {
             SimilarityResult similarity = getSimilarityResult(image1, image2, oneInAnother);
-            if (similarity.getSimilarity() >= SIMILARITY_MIN)
+            if (similarity.getSimilarity1() >= SIMILARITY_MIN &&
+                similarity.getSimilarity2() >= SIMILARITY_MIN + 10)
                 if (!image1.equals(image2)) results.add(similarity);
         }
         
         return new SearchResult(image1, results);
     }
     
-    private static void printPoints(Image image){
-        List<Point> points = image.getPoints();
+    /*private static void printPoints(Image image){
+        List<Edge> edges = image.getEdges();
         System.out.println("Points ----------------------------------");
-        for (Point point : points) {
-            System.out.print("(" + point.getX() + "; " + point.getY() + ") ");
+        for (Edge edge : edges) {
+            Point p1 = edge.getPoint1(); Point p2 = edge.getPoint2();
+            System.out.print("(" + p1.getX() + "; " + p1.getY() + ") ");
+            System.out.print("(" + p2.getX() + "; " + p2.getY() + ") ");
         }
         System.out.println();
-    }
+    }*/
 
     private static void printEdges(Image image){
-        HashMap<Integer, Integer> edges = image.getEdgeMap();
-        Set<Integer> keys = edges.keySet();
+        HashMap<Double, Integer> edges = image.getEdgeMap();
+        Set<Double> keys = edges.keySet();
         System.out.println("Edges -----------------------------------");
-        for (Integer edgeSize : keys) {
+        for (Double edgeSize : keys) {
             Integer edgeQty = edges.get(edgeSize);
             System.out.println("s: " + edgeSize + "; q: " + edgeQty);
         }
@@ -112,10 +144,16 @@ public class MatcherEdgeSeekerImpl implements Matcher{
     
     public static void main(String[] args) {
         DBManagerBasicImpl dbm = new DBManagerBasicImpl();
-        ObjectContainer db = dbm.getContainer();
-        Query query = db.query();
+//        ObjectContainer db = dbm.getContainer();
+        List<Image> images = dbm.getValidImages();/*db.query(new Predicate<Image>() {
+            @Override
+            public boolean match(Image image) {
+                return image.getEdgeMap() != null;
+            }
+        });*/
+       /* Query query = db.query();
         query.constrain(Image.class);
-        query.descend("url").orderAscending();
+        query.descend("url").orderAscending();*/
         /*Point p1 = new Point(15, 17); p1.computeRelativeXY(200, 200);
         Point p2 = new Point(15, 20); p2.computeRelativeXY(200, 200);
         Point p3 = new Point(18, 17); p3.computeRelativeXY(200, 200);
@@ -130,7 +168,7 @@ public class MatcherEdgeSeekerImpl implements Matcher{
         pts2.add(p21); pts2.add(p22); pts2.add(p23);
         Image img2 = new Image(null, pts2);*/
 
-        List<Image> images = query.execute();//new ArrayList<Image>();
+//        List<Image> images = query.execute();//new ArrayList<Image>();
 //        images.add(img1); images.add(img2);
         System.out.println("Images: " + images.size());
         if (images.size() > 1){
@@ -138,7 +176,7 @@ public class MatcherEdgeSeekerImpl implements Matcher{
             for (Image image : images) {
                 System.out.println("-----------------------------------------");
                 System.out.println("         " + image.getUrl());
-                printPoints(image);
+//                printPoints(image);
                 printEdges(image);
             }
             
@@ -148,7 +186,7 @@ public class MatcherEdgeSeekerImpl implements Matcher{
             if (image1.hasMetaData() && image2.hasMetaData())
                 System.out.println("isSimilar: " + m.isSimilar(image1, image2));
             else System.out.println("No metadata found. Run Seeker first.");*/
-            Image image1 = images.get(8);
+            Image image1 = images.get(0);
             
             SearchResult searchResult = m.getSearchResult(image1, images, false);
             System.out.println("------------> " + image1.getUrl());

@@ -3,20 +3,21 @@
  * and open the template in the editor.
  */
 
-package eye.server.manager.impl;
+package eye.server.manager;
 
 import com.db4o.ObjectContainer;
 import com.db4o.ObjectSet;
 import com.db4o.cs.Db4oClientServer;
-import eye.server.manager.AbstractDBManager;
+import com.db4o.ext.Db4oIOException;
+import com.db4o.query.Predicate;
 import eye.core.model.Image;
 import eye.core.model.Place;
 import eye.core.model.RemoteSource;
-import eye.server.ConfigLoader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import javax.swing.JOptionPane;
 
 /**
  *
@@ -28,10 +29,18 @@ public class DBManagerBasicImpl extends AbstractDBManager{
     private static ConfigLoader conf = ConfigLoader.getInstance();
 
     public ObjectContainer getContainer() {
+        try {
         return Db4oClientServer.openClient(Db4oClientServer
                 .newClientConfiguration(), conf.getHost(), conf.getPort(), conf.getUser(), conf.getPass());
+        } catch(Db4oIOException dbioe){
+            JOptionPane.showMessageDialog(null, dbioe);
+            return null;
+        }
     }
 
+    /**
+     * @deprecated use EyeAdmin instead
+     */
     public void watchDb() {
         ObjectContainer db = getContainer();
         try {
@@ -41,6 +50,10 @@ public class DBManagerBasicImpl extends AbstractDBManager{
         }
     }
 
+    /**
+     * @deprecated use EyeAdmin instead
+     * @param db
+     */
     public void watchDb(ObjectContainer db) {
         ObjectSet objects = db.query().execute();
 
@@ -61,8 +74,8 @@ public class DBManagerBasicImpl extends AbstractDBManager{
                 images++;
                 Image i = (Image) object;
                 LOG.info("Image: " + i.getUrl());
-                if (i.getPoints() != null) {
-                    LOG.info("!!!!!!!!!!!!!!!!!!!!!!!Points: " + i.getPoints());
+                if (i.getEdgeMap() != null) {
+                    LOG.info("!!!!!!!!!!!!!!!!!!!!!!!Points: " + i.getEdgeMap());
                 }
             }
         }
@@ -110,11 +123,19 @@ public class DBManagerBasicImpl extends AbstractDBManager{
         store(sources);
     }
 
-    /** Retrieves all images from DB */
-    public List<Image> getAllImages(){//PENDING: нельзя здесь закрывать. понять почему!!
+    /** Retrieves all valid images from DB */
+    public List<Image> getValidImages(){//PENDING: нельзя здесь закрывать. понять почему!!
         ObjectContainer db = getContainer();
         try {
-            return db.query(Image.class);
+            List<Image> images = db.query(new Predicate<Image>() {
+            @Override
+            public boolean match(Image image) {
+                if (image.getEdgeMap() == null ||
+                    image.getAngleMap() == null) return false;
+                return true;
+            }
+        });
+            return images;
         }catch(Exception e){
             e.printStackTrace();
             return null;

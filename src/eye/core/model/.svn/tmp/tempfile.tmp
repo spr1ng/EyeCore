@@ -1,0 +1,53 @@
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+
+package eye.core.model;
+
+import eye.core.math.MathExt;
+
+/**
+ *
+ * @author spr1ng
+ * @version $Id$
+ */
+public class Edge {
+
+    /** Кол-во знаков после запятой, домустимое в длине ребра */
+    public static final int LENGTH_ROUNDING = 1;
+    public static final int MAX_SIZE = 50;//PENDING:
+
+    private Point point1;
+    private Point point2;
+
+    public Edge() {
+    }
+
+    public Edge(Point point1, Point point2) {
+        this.point1 = point1;
+        this.point2 = point2;
+    }
+
+    public Point getPoint1() {
+        return point1;
+    }
+
+    public void setPoint1(Point point1) {
+        this.point1 = point1;
+    }
+
+    public Point getPoint2() {
+        return point2;
+    }
+
+    public void setPoint2(Point point2) {
+        this.point2 = point2;
+    }
+
+    public double size(){
+        return MathExt.round(Math.hypot(point1.getRelativeX()-point2.getRelativeX(),
+                            point1.getRelativeY()-point2.getRelativeY()), LENGTH_ROUNDING);
+    }
+
+}
